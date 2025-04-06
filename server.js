@@ -6,8 +6,15 @@
 |--------------------------------------------------------------------------
 |
 | This file bootstraps Adonisjs to start the HTTP server. You are free to
-| customize the process of booting the HTTP server.
+| customize the process of booting the http server.
 |
+| """ Loading ace commands """
+|     At times you may want to load ace commands when starting the HTTP server.
+|     Same can be done by chaining `loadCommands()` method after
+|
+| """ Preloading files """
+|     Also you can preload files by calling `preLoad('path/to/file')` method.
+|     Make sure to pass a relative path from the project root.
 */
 
 const { Ignitor } = require('@adonisjs/ignitor')
@@ -15,11 +22,4 @@ const { Ignitor } = require('@adonisjs/ignitor')
 new Ignitor(require('@adonisjs/fold'))
   .appRoot(__dirname)
   .fireHttpServer()
-  .then(() => {
-    const host = '0.0.0.0';  // Ensure the app listens on 0.0.0.0
-    const port = process.env.PORT || 3333;  // Use the port from the environment variable
-    app.listen(port, host, () => {
-      console.log(`Server is running on http://${host}:${port}`);
-    });
-  })
-  .catch(console.error);
+  .catch(console.error)
