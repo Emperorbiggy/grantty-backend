@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "build": "node ace build",
-    "start": "node build/server.js",  
+    "start": "node build/server.js",
     "test": "node ace test"
   },
   "keywords": [
@@ -28,6 +28,7 @@
     "@vercel/node": "^5.1.14",
     "ai21": "^1.1.1",
     "axios": "^1.8.4",
+    "pg": "^8.14.1",
     "sqlite3": "^5.1.7",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
