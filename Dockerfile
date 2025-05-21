@@ -4,17 +4,17 @@ FROM node:18
 # Set working directory
 WORKDIR /app
 
-# Copy only the necessary files first for caching
+# Copy dependency files
 COPY package*.json ./
 
 # Install dependencies
 RUN npm install
 
-# Copy the rest of the app
+# Copy rest of the app
 COPY . .
 
-# Expose the port AdonisJS listens on
+# Expose AdonisJS port
 EXPOSE 3333
 
-# Start the server
-CMD ["node", "server.js"]
+# Run migrations and start the server
+CMD npx adonis migration:run && node server.js

@@ -30,7 +30,7 @@
     "axios": "^1.9.0",
     "jsonwebtoken": "^9.0.2",
     "node-cache": "^5.1.2",
-    "pg": "^8.14.1",
+    "pg": "^8.16.0",
     "sqlite3": "^5.1.7",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
