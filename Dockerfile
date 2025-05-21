@@ -13,8 +13,8 @@ RUN npm install
 # Copy the rest of the app
 COPY . .
 
-# Expose the AdonisJS port
+# Expose the port AdonisJS listens on
 EXPOSE 3333
 
-# Run migration and start the server
-CMD node ace migration:run && node server.js
+# Run migrations with --force and start the server
+CMD node ace migration:run --force && node server.js
