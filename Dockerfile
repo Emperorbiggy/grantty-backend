@@ -1,18 +1,20 @@
-# Dockerfile
-
+# Use official Node.js image
 FROM node:18
 
+# Set working directory
 WORKDIR /app
 
+# Copy only the necessary files first for caching
 COPY package*.json ./
 
+# Install dependencies
 RUN npm install
 
+# Copy the rest of the app
 COPY . .
 
-# Create the SQLite DB folder in the image and set permissions
-RUN mkdir -p database && touch database/adonis.sqlite && chmod -R 777 database
-
+# Expose the port AdonisJS listens on
 EXPOSE 3333
 
-CMD node ace migration:run --force && node server.js
+# Start the server
+CMD ["node", "server.js"]
