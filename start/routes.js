@@ -19,6 +19,8 @@ Route.get('payments/verify/:reference', 'PaymentController.verify')
 Route.get('/payments', 'PaymentController.all')
 Route.get('/payments/:id', 'PaymentController.getById')
 Route.delete('/payments/:id', 'PaymentController.delete')
+Route.post('payments/callback', 'PaymentController.callback')
+
 Route.get('test', ({ response }) => {
   return response.json({ message: 'Server is running' })
 })

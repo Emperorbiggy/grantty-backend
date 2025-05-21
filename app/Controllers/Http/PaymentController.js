@@ -122,6 +122,43 @@ async all({ response }) {
     return response.status(500).json({ message: error.message })
   }
 }
+async callback({ request, response }) {
+  try {
+    const paystackSignature = request.header('x-paystack-signature')
+    const payload = request.raw() // raw request body (buffer or string)
+
+    // Verify signature to confirm request came from Paystack
+    const crypto = require('crypto')
+    const secret = process.env.PAYSTACK_SECRET_KEY
+    const hash = crypto.createHmac('sha512', secret).update(payload).digest('hex')
+
+    if (hash !== paystackSignature) {
+      return response.status(400).json({ message: 'Invalid signature' })
+    }
+
+    const event = request.input('event') // e.g. 'charge.success'
+    const data = request.input('data')
+
+    if (event === 'charge.success') {
+      // Payment succeeded - save/update payment status in your DB
+      await Database.table('payments').where('payment_reference', data.reference).update({
+        status: data.status,
+        updated_at: new Date(),
+      })
+
+      
+
+      return response.status(200).json({ message: 'Payment verified and updated' })
+    }
+
+    // Handle other events if necessary
+    return response.status(200).json({ message: 'Event ignored' })
+  } catch (error) {
+    console.error('Paystack callback error:', error)
+    return response.status(500).json({ message: 'Internal server error' })
+  }
+}
+
   // GET /payments/:id
   async getById({ params, response }) {
     const { id } = params
