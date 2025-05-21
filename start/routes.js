@@ -1,31 +1,28 @@
-'use strict'
-
-/*
-|--------------------------------------------------------------------------
-| Routes
-|--------------------------------------------------------------------------
-|
-| Http routes are entry points to your web application. You can create
-| routes for different URLs and bind Controller actions to them.
-|
-| A complete guide on routing is available here.
-| http://adonisjs.com/docs/4.1/routing
-|
-*/
-
-/** @type {typeof import('@adonisjs/framework/src/Route/Manager')} */
 const Route = use('Route')
 
-// This is your GET route
-Route.get('/', () => {
-  return { greeting: 'Hello world in JSON' }
+// Public routes
+Route.post('/signup', 'AuthController.store')
+Route.post('/login', 'AuthController.login')
+
+// Protected routes - apply auth middleware
+Route.group(() => {
+  Route.get('/profile', 'AuthController.show')
+  Route.put('/profile', 'AuthController.update')
+  Route.post('/logout', 'AuthController.logout')
+}).middleware(['auth'])
+Route.post('/startups', 'StartupController.create').middleware('auth')
+Route.get('/startups', 'StartupController.getAll')
+Route.get('/startups/:id', 'StartupController.getById')
+Route.get('user/startups', 'StartupController.getByUserId').middleware(['auth']);
+Route.post('payments/initialize', 'PaymentController.initialize')
+Route.get('payments/verify/:reference', 'PaymentController.verify')
+Route.get('/payments', 'PaymentController.all')
+Route.get('/payments/:id', 'PaymentController.getById')
+Route.delete('/payments/:id', 'PaymentController.delete')
+Route.get('test', ({ response }) => {
+  return response.json({ message: 'Server is running' })
 })
 
-// This is your POST route for content
-Route.post('/content', 'ContentController.store')
-Route.get('/content', 'ContentController.index')
-Route.put('/content/:id', 'ContentController.update')
-Route.delete('/content/:id', 'ContentController.destroy')
-Route.post('/chat', 'ChatbotController.store');
+
 
 

@@ -22,6 +22,26 @@ class User extends Model {
   }
 
   /**
+   * Get the user by email
+   *
+   * @param {String} email
+   * @returns {Object|null}
+   */
+  static async getByEmail(email) {
+    return await this.query().where('email', email).first()
+  }
+
+  /**
+   * Compare a given password with the hashed password
+   *
+   * @param {String} password
+   * @returns {Boolean}
+   */
+  async comparePassword(password) {
+    return await Hash.verify(password, this.password)
+  }
+
+  /**
    * A relationship on tokens is required for auth to
    * work. Since features like `refreshTokens` or
    * `rememberToken` will be saved inside the
