@@ -6,14 +6,14 @@ const Hash = use('Hash')
 class AuthController {
   // Signup a new user
   async store({ request, response, auth }) {
-  const { email, fullName, password } = request.only(['email', 'fullName', 'password'])
+  const { email, full_name, password } = request.only(['email', 'full_name', 'password'])
 
   try {
     const user = await User.create({
-      email,
-      full_name: fullName,
-      password
-    })
+  email,
+  full_name,
+  password
+})
 
     // Generate JWT token for the new user
     const token = await auth.generate(user)

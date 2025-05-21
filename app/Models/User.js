@@ -7,13 +7,14 @@ const Model = use('Model')
 const Hash = use('Hash')
 
 class User extends Model {
-  static boot () {
+  static get table() {
+    return 'users'  // default, but explicitly set if you want
+  }
+
+  static boot() {
     super.boot()
 
-    /**
-     * A hook to hash the user password before saving
-     * it to the database.
-     */
+    // Hash password before saving to DB
     this.addHook('beforeSave', async (userInstance) => {
       if (userInstance.dirty.password) {
         userInstance.password = await Hash.make(userInstance.password)
@@ -21,37 +22,18 @@ class User extends Model {
     })
   }
 
-  /**
-   * Get the user by email
-   *
-   * @param {String} email
-   * @returns {Object|null}
-   */
+  // Optional: static method to get user by email
   static async getByEmail(email) {
     return await this.query().where('email', email).first()
   }
 
-  /**
-   * Compare a given password with the hashed password
-   *
-   * @param {String} password
-   * @returns {Boolean}
-   */
+  // Instance method to compare password
   async comparePassword(password) {
     return await Hash.verify(password, this.password)
   }
 
-  /**
-   * A relationship on tokens is required for auth to
-   * work. Since features like `refreshTokens` or
-   * `rememberToken` will be saved inside the
-   * tokens table.
-   *
-   * @method tokens
-   *
-   * @return {Object}
-   */
-  tokens () {
+  // Relationship to tokens for authentication
+  tokens() {
     return this.hasMany('App/Models/Token')
   }
 }
