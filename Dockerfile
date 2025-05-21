@@ -5,19 +5,16 @@ FROM node:18
 WORKDIR /app
 
 # Copy dependency files
-COPY package*.json tsconfig.json ./
+COPY package*.json ./
 
 # Install dependencies
 RUN npm install
 
-# Copy the rest of the application
+# Copy the rest of the app
 COPY . .
 
-# Compile TypeScript
-RUN node ace build
-
-# Expose port Adonis listens on
+# Expose the AdonisJS port
 EXPOSE 3333
 
-# Run migrations and start the compiled server
-CMD node build/ace.js migration:run && node build/server.js
+# Run migration and start the server
+CMD node ace migration:run && node server.js
