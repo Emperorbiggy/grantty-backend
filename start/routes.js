@@ -14,6 +14,7 @@ Route.post('/startups', 'StartupController.create').middleware('auth')
 Route.get('/startups', 'StartupController.getAll')
 Route.get('/startups/:id', 'StartupController.getById')
 Route.get('user/startups', 'StartupController.getByUserId').middleware(['auth']);
+Route.get('user/payments', 'PaymentController.getUserPayments').middleware(['auth'])
 Route.post('payments/initialize', 'PaymentController.initialize')
 Route.get('payments/verify/:reference', 'PaymentController.verify')
 Route.get('/payments', 'PaymentController.all')

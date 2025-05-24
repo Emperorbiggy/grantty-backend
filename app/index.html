@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Test Create Startup</title>
+</head>
+<body>
+  <h2>Create Startup Form</h2>
+  <form id="startupForm" enctype="multipart/form-data">
+    <!-- Your form fields (all the same except user_id removed) -->
+    <label>Startup Name: <input type="text" name="startup_name" required></label><br>
+    <label>Description: <input type="text" name="startup_description"></label><br>
+    <label>Location: <input type="text" name="startup_location"></label><br>
+    <label>Website: <input type="url" name="startup_website"></label><br>
+    <label>Email: <input type="email" name="startup_email"></label><br>
+    <label>Startup Picture: <input type="file" name="startup_picture"></label><br>
+    <label>Team Size: <input type="number" name="team_size"></label><br>
+    <label>No of Teams: <input type="number" name="no_of_teams"></label><br>
+    <label>Cofounder: <input type="checkbox" name="cofounder"></label><br>
+    <label>Profile Image: <input type="file" name="profile_image"></label><br>
+    <label>LinkedIn: <input type="url" name="linkedin_profile"></label><br>
+    <label>NIN: <input type="text" name="nin"></label><br>
+    <label>Amount of Funds: <input type="number" name="amount_of_funds"></label><br>
+    <label>Usage of Funds: <input type="text" name="usage_of_funds"></label><br>
+    <label>No of Customers: <input type="number" name="no_of_customers"></label><br>
+    <label>Video URL: <input type="text" name="video"></label><br>
+    <label>Industry: <input type="text" name="startup_industry"></label><br>
+
+    <h3>Founder Info</h3>
+    <label>Full Name: <input type="text" name="full_name" required></label><br>
+    <label>Founder LinkedIn: <input type="url" name="founder_linkedin_profile"></label><br>
+    <label>Email Address: <input type="email" name="email_address"></label><br>
+    <label>Phone No: <input type="text" name="phone_no"></label><br>
+    <label>Founder NIN: <input type="text" name="founder_nin"></label><br>
+    <label>Role: <input type="text" name="role"></label><br>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <script>
+  const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOjEsImlhdCI6MTc0ODA5NzIwN30.VGjkD_w97-4h4vqayClyhz2BO9mOa6QmZzpoKN8bHDc"; // your JWT token
+
+  // Helper: convert FormData to plain object for easier logging
+  function formDataToObject(formData) {
+    const obj = {};
+    for (const [key, value] of formData.entries()) {
+      obj[key] = value;
+    }
+    return obj;
+  }
+
+  document.getElementById('startupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    // For checkbox, convert "on" to boolean true/false
+    formData.set('cofounder', formData.get('cofounder') ? 'true' : 'false');
+
+    // Log the data sent
+    console.log('Data sent:', formDataToObject(formData));
+
+    try {
+      const response = await fetch('http://localhost:3333/startups', {  // no leading space here
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'  // <--- add this
+        },
+        body: formData,
+      });
+
+      let data;
+      const contentType = response.headers.get('content-type');
+
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        throw new Error('Server did not return JSON');
+      }
+
+      if (response.ok) {
+        alert('Startup created successfully');
+        console.log(data);
+      } else {
+        alert('Error: ' + (data.message || 'Unknown error'));
+        console.error(data);
+      }
+    } catch (err) {
+      alert('Request failed: ' + err.message);
+      console.error(err);
+    }
+
+  });
+</script>
+
+
+</body>
+</html>

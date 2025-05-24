@@ -36,76 +36,83 @@ class PaymentController {
 
   // Verify payment
   async verify({ params, request, response }) {
-    const reference = params.reference
-    const startup_id = request.input('startup_id')
+  const reference = params.reference
+  const startup_id = request.input('startup_id')
 
-    if (!reference || !startup_id) {
-      return response.status(400).json({ message: 'Reference and startup_id are required' })
-    }
-
-    try {
-      const forwardedIP = '105.119.10.94'
-
-      const config = {
-        headers: {
-          'X-Forwarded-For': forwardedIP,
-        },
-      }
-
-      // Call your Paystack service to verify payment
-      const result = await PaystackService.verifyPayment(reference, config)
-
-      // Extract payment data
-      const customer = result.data.customer
-      const amount = result.data.amount
-      const paystackId = result.data.id
-      const paymentReference = result.data.reference
-      const status = result.data.status
-
-      if (!customer || amount === undefined) {
-        return response.status(400).json({ message: 'Missing email or amount in Paystack response' })
-      }
-
-      const email = customer.email
-
-      // Get startup info
-      const startup = await Database
-        .table('startups')
-        .where('id', startup_id)
-        .first()
-
-      if (!startup) {
-        return response.status(404).json({ message: 'Startup not found' })
-      }
-
-      const startupName = startup.startup_name
-
-      // Save payment info to DB
-      const savedPayment = await Database
-        .table('payments')
-        .insert({
-          startup_id,
-          startup_name: startupName,
-          email,
-          amount,
-          payment_id: paystackId,
-          payment_reference: paymentReference,
-          status,
-          created_at: new Date(),
-          updated_at: new Date(),
-        })
-
-      return response.status(200).json({
-        message: 'Payment verified and saved successfully',
-        data: {
-          payment: result,
-          savedPayment,
-        },
-      })
-    } catch (error) {
-      return response.status(500).json({ message: error.message })
-    }
+  if (!reference || !startup_id) {
+    return response.status(400).json({ message: 'Reference and startup_id are required' })
   }
+
+  try {
+    const forwardedIP = '105.119.10.94'
+
+    const config = {
+      headers: {
+        'X-Forwarded-For': forwardedIP,
+      },
+    }
+
+    // Verify payment with Paystack
+    const result = await PaystackService.verifyPayment(reference, config)
+
+    const customer = result.data.customer
+    const amount = result.data.amount // Amount is usually in kobo, check your currency unit
+    const paystackId = result.data.id
+    const paymentReference = result.data.reference
+    const status = result.data.status
+
+    if (!customer || amount === undefined) {
+      return response.status(400).json({ message: 'Missing email or amount in Paystack response' })
+    }
+
+    const email = customer.email
+
+    // Get startup info
+    const startup = await Database
+      .table('startups')
+      .where('id', startup_id)
+      .first()
+
+    if (!startup) {
+      return response.status(404).json({ message: 'Startup not found' })
+    }
+
+    const startupName = startup.startup_name
+
+    // Save payment info to DB
+    const savedPayment = await Database
+      .table('payments')
+      .insert({
+        startup_id,
+        startup_name: startupName,
+        email,
+        amount,
+        payment_id: paystackId,
+        payment_reference: paymentReference,
+        status,
+        created_at: new Date(),
+        updated_at: new Date(),
+      })
+
+    // Update amount_raised in startups table by adding this payment amount
+    // Use query builder with increment for atomic update
+    await Database
+      .table('startups')
+      .where('id', startup_id)
+      .increment('amount_raised', amount)
+
+    return response.status(200).json({
+      message: 'Payment verified, saved, and startup amount_raised updated successfully',
+      data: {
+        payment: result,
+        savedPayment,
+      },
+    })
+  } catch (error) {
+    return response.status(500).json({ message: error.message })
+  }
+}
+
   // GET /payments
 async all({ response }) {
   try {
@@ -207,6 +214,31 @@ async callback({ request, response }) {
       return response.status(500).json({ message: error.message })
     }
   }
+
+  async getUserPayments({ auth, response }) {
+    try {
+      const user = auth.user
+      if (!user) {
+        return response.status(401).json({ error: 'Unauthorized' })
+      }
+
+      const email = user.email
+      console.log('Authenticated user email:', email)
+
+      // Fetch payments with user's email
+      const payments = await Database
+        .table('payments')
+        .where('email', email)
+        .select('*')
+
+      return response.json({ payments })
+
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json({ error: 'Something went wrong' })
+    }
+  }
+
 
 }
 
