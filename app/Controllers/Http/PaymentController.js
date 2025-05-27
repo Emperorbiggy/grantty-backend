@@ -231,27 +231,41 @@ class PaymentController {
   }
 
   async getUserPayments({ auth, response }) {
-    try {
-      const user = auth.user
-      if (!user) {
-        return response.status(401).json({ error: 'Unauthorized' })
-      }
+  console.log('Auth object:', auth)
 
-      const email = user.email
-      console.log('Authenticated user email:', email)
+  try {
+    const user = auth.user
+    console.log('Authenticated user:', user)
 
-      const payments = await Database
-        .table('payments')
-        .where('email', email)
-        .select('*')
-
-      return response.json({ payments })
-
-    } catch (error) {
-      console.error(error)
-      return response.status(500).json({ error: 'Something went wrong' })
+    if (!user) {
+      return response.status(401).json({ error: 'Unauthorized' })
     }
+
+    const email = user.email
+    console.log('Fetching payments for email:', email)
+
+    const payments = await Database
+      .from('payments')
+      .where('email', email)
+      .select('*')
+
+    if (payments.length === 0) {
+      const msg = `Payment not found for email: ${email}`
+      console.log(msg)
+      return response.status(404).json({ message: msg })
+    }
+
+    return response.status(200).json({
+      message: 'Payments fetched successfully',
+      data: payments
+    })
+
+  } catch (error) {
+    console.error('Error in getUserPayments:', error)
+    return response.status(500).json({ error: 'Something went wrong' })
   }
+}
+
 }
 
 module.exports = PaymentController
