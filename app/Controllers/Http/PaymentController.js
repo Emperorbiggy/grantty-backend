@@ -130,20 +130,22 @@ class PaymentController {
 
   // GET /payments (optionally, you can apply distinct here if needed)
   async all({ response }) {
-    try {
-      const payments = await Database
-        .from('payments')
-        .select('*')
-        .orderBy('created_at', 'desc')
+  try {
+    const payments = await Database
+      .from('payments')
+      .select('*')
+      .groupBy('payment_reference')
+      .orderBy('created_at', 'desc')
 
-      return response.status(200).json({
-        message: 'Payments fetched successfully',
-        data: payments,
-      })
-    } catch (error) {
-      return response.status(500).json({ message: error.message })
-    }
+    return response.status(200).json({
+      message: 'Payments fetched successfully',
+      data: payments,
+    })
+  } catch (error) {
+    return response.status(500).json({ message: error.message })
   }
+}
+
 
   async callback({ request, response }) {
     try {
