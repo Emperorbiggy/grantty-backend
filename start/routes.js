@@ -19,6 +19,7 @@ Route.post('payments/initialize', 'PaymentController.initialize')
 Route.get('payments/verify/:reference', 'PaymentController.verify')
 Route.get('/payments', 'PaymentController.all')
 Route.get('/payments/:id', 'PaymentController.getById')
+Route.get('/payments/users', 'PaymentController.getUserPayments').middleware(['auth'])
 Route.delete('/payments/:id', 'PaymentController.delete')
 Route.post('payments/callback', 'PaymentController.callback')
 
