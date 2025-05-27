@@ -202,6 +202,32 @@ class PaymentController {
       return response.status(500).json({ message: error.message })
     }
   }
+  // GET /payments/startup/:startup_id
+async getByStartupId({ params, response }) {
+  const { startup_id } = params
+
+  try {
+    const payment = await Database
+      .from('payments')
+      .where('startup_id', startup_id)
+      .first()
+
+    if (!payment) {
+      return response.status(404).json({
+        message: `Payment not found for startup_id ${startup_id}`,
+      })
+    }
+
+    return response.status(200).json({
+      message: 'Payment fetched successfully',
+      data: payment,
+    })
+  } catch (error) {
+    console.error('Error fetching payment by startup_id:', error)
+    return response.status(500).json({ message: 'Internal server error' })
+  }
+}
+
 
   // DELETE /payments/:id
   async delete({ params, response }) {
