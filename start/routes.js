@@ -25,6 +25,9 @@ Route.get('/payment', 'PaymentController.getUserPayments').middleware('auth')
 Route.delete('/payments/:id', 'PaymentController.delete')
 Route.post('payments/callback', 'PaymentController.callback')
 
+Route.post('/newsletter', 'NewsletterController.subscribe')
+
+
 Route.get('test', ({ response }) => {
   return response.json({ message: 'Server is running' })
 })
