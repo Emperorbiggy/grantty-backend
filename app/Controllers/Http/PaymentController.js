@@ -54,7 +54,8 @@ class PaymentController {
       const result = await PaystackService.verifyPayment(reference, config)
 
       const customer = result.data.customer
-      const amount = result.data.amount
+      const amountInKobo = result.data.amount
+      const amount = amountInKobo / 100
       const paystackId = result.data.id
       const paymentReference = result.data.reference
       const status = result.data.status
