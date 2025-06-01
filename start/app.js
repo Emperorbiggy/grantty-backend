@@ -15,7 +15,9 @@ const providers = [
   '@adonisjs/auth/providers/AuthProvider',
   '@adonisjs/bodyparser/providers/BodyParserProvider',
   '@adonisjs/cors/providers/CorsProvider',
+  '@adonisjs/mail/providers/MailProvider',
   '@adonisjs/lucid/providers/LucidProvider'
+
 ]
 
 /*
@@ -43,7 +45,9 @@ const aceProviders = [
 |   { Route: 'Adonis/Src/Route' }
 |
 */
-const aliases = {}
+const aliases = {
+  Mail: '@adonisjs/mail',
+}
 
 /*
 |--------------------------------------------------------------------------

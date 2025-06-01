@@ -204,29 +204,33 @@ class PaymentController {
     }
   }
   // GET /payments/startup/:startup_id
-  async getByStartupId({ params, response }) {
-    const { startup_id } = params
-  
-    try {
-      const payments = await Database
-        .from('payments')
-        .where('startup_id', startup_id);
-  
-      if (payments.length === 0) {
-        return response.status(404).json({
-          message: `No payments found for startup_id ${startup_id}`,
-        });
-      }
-  
-      return response.status(200).json({
-        message: 'Payments fetched successfully',
-        data: payments,
+ async getByStartupId({ params, response }) {
+  const { startup_id } = params
+
+  try {
+    const payments = await Database
+      .from('payments')
+      .where('startup_id', startup_id);
+
+    if (payments.length === 0) {
+      return response.status(404).json({
+        message: `No payments found for startup_id ${startup_id}`,
       });
-    } catch (error) {
-      console.error('Error fetching payments by startup_id:', error);
-      return response.status(500).json({ message: 'Internal server error' });
     }
+
+    // Sum the amount field from all payments
+    const totalAmount = payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+
+    return response.status(200).json({
+      message: 'Total payment amount fetched successfully',
+      totalAmount,
+    });
+  } catch (error) {
+    console.error('Error fetching payments by startup_id:', error);
+    return response.status(500).json({ message: 'Internal server error' });
   }
+}
+
   
 
 

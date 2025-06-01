@@ -1,6 +1,7 @@
 'use strict'
 
-const Mail = use('Mail')
+const MailService = require('../../Services/MailService')
+const NewsletterSubscriber = use('App/Models/NewsletterSubscriber')
 
 class NewsletterController {
   async subscribe({ request, response }) {
@@ -11,16 +12,17 @@ class NewsletterController {
     }
 
     try {
-      await Mail.send((message) => {
-        message
-          .to(email)
-          .from('info@grantty.com', 'Your Brand')
-          .subject('🎉 Thanks for Subscribing!')
-          .html(`
-            <h1>Welcome!</h1>
-            <p>Thanks for subscribing to our newsletter. We'll keep you updated!</p>
-          `)
-      })
+      // Check if email already subscribed
+      const existing = await NewsletterSubscriber.query().where('email', email).first()
+      if (existing) {
+        return response.status(409).send({ message: 'Email is already subscribed' })
+      }
+
+      // Store subscriber email
+      await NewsletterSubscriber.create({ email })
+
+      // Send newsletter email
+      await MailService.sendNewsletterEmail(email)
 
       return response.status(200).send({ message: 'Newsletter sent successfully!' })
     } catch (error) {

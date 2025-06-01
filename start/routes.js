@@ -9,6 +9,9 @@ const Route = use('Route')
 Route.post('/signup', 'AuthController.store')
 Route.get('/ping', () => 'pong')
 Route.post('/login', 'AuthController.login')
+Route.post('/verify-otp', 'AuthController.verifyOTP')
+Route.get('/users', 'AuthController.fetchAllUsers')
+Route.post('/resend-otp', 'AuthController.resendOtp')
 
 Route.post('/newsletter', 'NewsletterController.subscribe')
 
@@ -18,6 +21,10 @@ Route.post('/newsletter', 'NewsletterController.subscribe')
 Route.get('/test', ({ response }) => {
   return response.json({ message: 'Server is running' })
 })
+Route.post('/signup-test', ({ response }) => {
+  return response.json({ message: 'signup test success' })
+})
+
 
 // ===========================
 // 🔐 Auth-Protected Routes

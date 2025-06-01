@@ -1,37 +1,140 @@
 'use strict'
-
+const MailService = require('../../Services/MailService')
 const User = use('App/Models/User')
 const Hash = use('Hash')
+const Env = use('Env')
 
 class AuthController {
   // Signup a new user
-  async store({ request, response, auth }) {
+async store({ request, response, auth }) {
   const { email, full_name, password } = request.only(['email', 'full_name', 'password'])
 
   try {
-    const user = await User.create({
-  email,
-  full_name,
-  password
-})
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
 
-    // Generate JWT token for the new user
+    const user = await User.create({
+      email,
+      full_name,
+      password,
+      verification_code: verificationCode,
+      is_verified: false,
+    })
+
+    // Send verification email via your custom MailService
+    await MailService.sendVerificationEmail(user.email, user.full_name, verificationCode)
+
     const token = await auth.generate(user)
 
     return response.status(201).json({
       status: 'success',
-      message: 'User created successfully',
-      data: user,
-      token: token.token // return JWT token here
+      message: 'User created successfully. A verification code has been sent to your email.',
+      data: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        is_verified: user.is_verified
+      },
+      token: token.token,
     })
   } catch (error) {
+    console.error('Signup error:', error)
     return response.status(400).json({
       status: 'error',
       message: 'Unable to create user',
-      error: error.message
+      error: error.message,
     })
   }
 }
+async resendOtp({ request, response }) {
+  const email = request.input('email')
+
+  if (!email) {
+    return response.status(400).json({
+      status: 'error',
+      message: 'Email is required',
+    })
+  }
+
+  try {
+    const user = await User.findBy('email', email)
+
+    if (!user) {
+      return response.status(404).json({
+        status: 'error',
+        message: 'User not found',
+      })
+    }
+
+    if (user.is_verified) {
+      return response.status(400).json({
+        status: 'error',
+        message: 'User already verified, please login',
+      })
+    }
+
+    // Generate new verification code
+    const newCode = Math.floor(100000 + Math.random() * 900000).toString()
+
+    user.verification_code = newCode
+    await user.save()
+
+    // Resend verification email
+    await MailService.sendVerificationEmail(user.email, user.full_name, newCode)
+
+    return response.status(200).json({
+      status: 'success',
+      message: 'Verification code resent successfully',
+    })
+  } catch (error) {
+    console.error('Resend OTP error:', error)
+    return response.status(500).json({
+      status: 'error',
+      message: 'Failed to resend verification code',
+      error: error.message,
+    })
+  }
+}
+
+
+ async verifyOTP({ request, response }) {
+    const { email, otp } = request.only(['email', 'otp'])
+
+    try {
+      const user = await User.findBy('email', email)
+      if (!user) {
+        return response.status(404).json({ status: 'error', message: 'User not found' })
+      }
+
+      if (user.is_verified) {
+        return response.status(400).json({ status: 'error', message: 'User already verified' })
+      }
+
+      if (user.verification_code === otp) {
+        user.is_verified = true
+        user.verification_code = null  // clear code after verification
+        await user.save()
+
+        return response.json({ status: 'success', message: 'Email verified successfully' })
+      } else {
+        return response.status(400).json({ status: 'error', message: 'Invalid verification code' })
+      }
+    } catch (error) {
+      console.error('verifyOTP error:', error)
+      return response.status(500).json({ status: 'error', message: 'Something went wrong' })
+    }
+  }
+async fetchAllUsers({ response }) {
+    const users = await User.all()
+
+    return response.status(200).json({
+      status: 'success',
+      data: users
+    })
+  }
+
+
+
+
 
 
   // Login user
