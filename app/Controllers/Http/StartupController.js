@@ -17,134 +17,128 @@ function convertFilePathToUrl(filePath) {
 
 class StartupController {
   async create({ request, response, auth }) {
-    try {
-      const user_id = auth.user.id
-      console.log('Authenticated user ID:', user_id)
+  try {
+    const user_id = auth.user.id
+    console.log('Authenticated user ID:', user_id)
 
-      const {
-        startup_name,
-        startup_description,
-        startup_location,
-        startup_website,
-        startup_email,
-        team_size,
-        no_of_teams,
-        cofounder,
-        linkedin_profile,
-        nin,
-        amount_of_funds,
-        usage_of_funds,
-        no_of_customers,
-        video,
-        startup_industry,
-        full_name,
-        founder_linkedin_profile,
-        email_address,
-        phone_no,
-        founder_nin,
-        role,
-      } = request.post()
+    const {
+      startup_name,
+      startup_description,
+      startup_location,
+      startup_website,
+      startup_email,
+      team_size,
+      no_of_teams,
+      cofounder,
+      linkedin_profile,
+      nin,
+      amount_of_funds,
+      usage_of_funds,
+      no_of_customers,
+      video,
+      startup_industry,
+      full_name,
+      founder_linkedin_profile,
+      email_address,
+      phone_no,
+      founder_nin,
+      role,
+      startup_picture, // ✅ URL from frontend
+      profile_img,     // ✅ URL from frontend
+    } = request.only([
+      'startup_name',
+      'startup_description',
+      'startup_location',
+      'startup_website',
+      'startup_email',
+      'team_size',
+      'no_of_teams',
+      'cofounder',
+      'linkedin_profile',
+      'nin',
+      'amount_of_funds',
+      'usage_of_funds',
+      'no_of_customers',
+      'video',
+      'startup_industry',
+      'full_name',
+      'founder_linkedin_profile',
+      'email_address',
+      'phone_no',
+      'founder_nin',
+      'role',
+      'startup_picture',  // URL
+      'profile_img',      // URL
+    ])
 
-      const startupPictureFile = request.file('startup_picture')
-      const profileImageFile = request.file('profile_image')
+    // 🔎 Check for duplicates
+    const existingFounder = await Founder.query()
+      .where('email_address', email_address)
+      .first()
 
-      let startupPicturePath = null
-      let profileImagePath = null
-
-      if (startupPictureFile) {
-        await startupPictureFile.move(Helpers.publicPath('uploads'), {
-          name: startupPictureFile.clientName,
-          overwrite: true,
-        })
-        if (!startupPictureFile.moved()) {
-          return response.status(400).send(startupPictureFile.error())
-        }
-        startupPicturePath = `uploads/${startupPictureFile.clientName}`
-      }
-
-      if (profileImageFile) {
-        await profileImageFile.move(Helpers.publicPath('uploads'), {
-          name: profileImageFile.clientName,
-          overwrite: true,
-        })
-        if (!profileImageFile.moved()) {
-          return response.status(400).send(profileImageFile.error())
-        }
-        profileImagePath = `uploads/${profileImageFile.clientName}`
-      }
-
-      // Check for duplicates
-      const existingFounder = await Founder.query()
-        .where('email_address', email_address)
-        .first()
-
-      if (existingFounder) {
-        return response.status(400).json({ message: 'Founder email address already exists.' })
-      }
-
-      const existingStartup = await Startup.query()
-        .where('startup_email', startup_email)
-        .first()
-
-      if (existingStartup) {
-        return response.status(400).json({ message: 'Startup email address already exists.' })
-      }
-
-      // ✅ Create founder with model
-      const founder = new Founder()
-      founder.merge({
-        full_name,
-        linkedin_profile: founder_linkedin_profile,
-        email_address,
-        phone_no,
-        profile_img: profileImagePath,
-        nin: founder_nin,
-        role,
-        user_id,
-      })
-      await founder.save()
-
-      // ✅ Create startup with model
-      const startup = new Startup()
-      startup.merge({
-        startup_name,
-        startup_description,
-        startup_location,
-        startup_website,
-        startup_email,
-        startup_picture: startupPicturePath,
-        team_size: parseInt(team_size),
-        no_of_teams: parseInt(no_of_teams),
-        cofounder,
-        profile_image: profileImagePath,
-        linkedin_profile,
-        nin,
-        amount_of_funds: parseInt(amount_of_funds),
-        usage_of_funds,
-        no_of_customers: parseInt(no_of_customers),
-        video,
-        startup_industry,
-        founder_id: founder.id,
-        user_id,
-      })
-      await startup.save()
-
-      return response.status(201).json({
-        message: 'Startup and founder created successfully',
-        data: {
-          startup,
-          founder,
-        }
-      })
-
-    } catch (error) {
-      console.error('StartupController.create Error:', error)
-      return response.status(500).json({
-        message: 'Internal server error',
-        error: error.message,
-      })
+    if (existingFounder) {
+      return response.status(400).json({ message: 'Founder email address already exists.' })
     }
+
+    const existingStartup = await Startup.query()
+      .where('startup_email', startup_email)
+      .first()
+
+    if (existingStartup) {
+      return response.status(400).json({ message: 'Startup email address already exists.' })
+    }
+
+    // ✅ Create founder
+    const founder = await Founder.create({
+      full_name,
+      linkedin_profile: founder_linkedin_profile,
+      email_address,
+      phone_no,
+      profile_img,
+      nin: founder_nin,
+      role,
+      user_id,
+    })
+
+    // ✅ Create startup
+    const startup = await Startup.create({
+      startup_name,
+      startup_description,
+      startup_location,
+      startup_website,
+      startup_email,
+      startup_picture,
+      team_size: parseInt(team_size),
+      no_of_teams: parseInt(no_of_teams),
+      cofounder,
+      profile_image: profile_img,
+      linkedin_profile,
+      nin,
+      amount_of_funds: parseInt(amount_of_funds),
+      usage_of_funds,
+      no_of_customers: parseInt(no_of_customers),
+      video,
+      startup_industry,
+      founder_id: founder.id,
+      user_id,
+    })
+
+    return response.status(201).json({
+      message: 'Startup and founder created successfully',
+      data: {
+        startup,
+        founder,
+      }
+    })
+
+  } catch (error) {
+    console.error('StartupController.create Error:', error)
+    return response.status(500).json({
+      message: 'Internal server error',
+      error: error.message,
+    })
   }
+}
 
 
   async getAll({ response }) {

@@ -7,20 +7,35 @@ const Env = use('Env')
 class AuthController {
   // Signup a new user
 async store({ request, response, auth }) {
-  const { email, full_name, password } = request.only(['email', 'full_name', 'password'])
+  const { email, full_name, password, user_type } = request.only([
+    'email',
+    'full_name',
+    'password',
+    'user_type'
+  ])
 
   try {
+    // ✅ Check if email already exists
+    const existingUser = await User.findBy('email', email)
+    if (existingUser) {
+      return response.status(409).json({
+        status: 'error',
+        message: 'Email already in use'
+      })
+    }
+
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
 
     const user = await User.create({
       email,
       full_name,
       password,
+      user_type,
       verification_code: verificationCode,
       is_verified: false,
     })
 
-    // Send verification email via your custom MailService
+    // Send verification email
     await MailService.sendVerificationEmail(user.email, user.full_name, verificationCode)
 
     const token = await auth.generate(user)
@@ -32,6 +47,7 @@ async store({ request, response, auth }) {
         id: user.id,
         email: user.email,
         full_name: user.full_name,
+        user_type: user.user_type,
         is_verified: user.is_verified
       },
       token: token.token,
@@ -45,6 +61,8 @@ async store({ request, response, auth }) {
     })
   }
 }
+
+
 async resendOtp({ request, response }) {
   const email = request.input('email')
 
