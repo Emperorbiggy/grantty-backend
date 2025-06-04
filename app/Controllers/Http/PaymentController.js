@@ -6,31 +6,34 @@ const PaystackService = use('App/Services/PaystackService')
 class PaymentController {
   // Initialize payment
   async initialize({ request, response }) {
-    const { email, amount, startup_id } = request.only(['email', 'amount', 'startup_id'])
+  const { email, amount, startup_id } = request.only(['email', 'amount', 'startup_id'])
 
-    if (!email || !amount || !startup_id) {
-      return response.status(400).json({ message: 'Email, amount, and startup_id are required' })
-    }
-
-    try {
-      const forwardedIP = '105.119.10.94'
-
-      const config = {
-        headers: {
-          'X-Forwarded-For': forwardedIP,
-        },
-      }
-
-      const result = await PaystackService.initializePayment(email, amount, config)
-
-      return response.status(200).json({
-        message: 'Payment initialized successfully',
-        data: result,
-      })
-    } catch (error) {
-      return response.status(500).json({ message: error.message })
-    }
+  if (!email || !amount || !startup_id) {
+    return response.status(400).json({ message: 'Email, amount, and startup_id are required' })
   }
+
+  try {
+    const forwardedIP = '105.119.10.94'
+
+    const config = {
+      headers: {
+        'X-Forwarded-For': forwardedIP,
+      },
+    }
+
+    const callbackUrl = 'https://grantty.com/payment'
+
+    const result = await PaystackService.initializePayment(email, amount, config, callbackUrl)
+
+    return response.status(200).json({
+      message: 'Payment initialized successfully',
+      data: result,
+    })
+  } catch (error) {
+    return response.status(500).json({ message: error.message })
+  }
+}
+
 
   // Verify payment (updated to prevent duplicate inserts)
   async verify({ params, request, response }) {
