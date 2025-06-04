@@ -143,32 +143,36 @@ async resendOtp({ request, response }) {
 
 
  async verifyOTP({ request, response }) {
-    const { email, otp } = request.only(['email', 'otp'])
+  let { email, otp } = request.only(['email', 'otp'])
 
-    try {
-      const user = await User.findBy('email', email)
-      if (!user) {
-        return response.status(404).json({ status: 'error', message: 'User not found' })
-      }
+  try {
+    // Trim and clean the email in case it has extra quotes
+    email = email.replace(/^"+|"+$/g, '').trim()
 
-      if (user.is_verified) {
-        return response.status(400).json({ status: 'error', message: 'User already verified' })
-      }
-
-      if (user.verification_code === otp) {
-        user.is_verified = true
-        user.verification_code = null  // clear code after verification
-        await user.save()
-
-        return response.json({ status: 'success', message: 'Email verified successfully' })
-      } else {
-        return response.status(400).json({ status: 'error', message: 'Invalid verification code' })
-      }
-    } catch (error) {
-      console.error('verifyOTP error:', error)
-      return response.status(500).json({ status: 'error', message: 'Something went wrong' })
+    const user = await User.findBy('email', email)
+    if (!user) {
+      return response.status(404).json({ status: 'error', message: 'User not found' })
     }
+
+    if (user.is_verified) {
+      return response.status(400).json({ status: 'error', message: 'User already verified' })
+    }
+
+    if (user.verification_code === otp) {
+      user.is_verified = true
+      user.verification_code = null // clear code after verification
+      await user.save()
+
+      return response.json({ status: 'success', message: 'Email verified successfully' })
+    } else {
+      return response.status(400).json({ status: 'error', message: 'Invalid verification code' })
+    }
+  } catch (error) {
+    console.error('verifyOTP error:', error)
+    return response.status(500).json({ status: 'error', message: 'Something went wrong' })
   }
+}
+
 async fetchAllUsers({ response }) {
     const users = await User.all()
 
