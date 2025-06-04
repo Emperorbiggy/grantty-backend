@@ -36,101 +36,115 @@ class PaymentController {
 
 
   // Verify payment (updated to prevent duplicate inserts)
-  async verify({ params, request, response }) {
-    const reference = params.reference
-    const startup_id = request.input('startup_id')
+ async verify({ params, request, response }) {
+  const reference = params.reference;
+  const startup_id = request.input('startup_id');
 
-    if (!reference || !startup_id) {
-      return response.status(400).json({ message: 'Reference and startup_id are required' })
+  console.log('Received reference:', reference);
+  console.log('Received startup_id:', startup_id);
+
+  if (!reference || !startup_id) {
+    console.log('Missing reference or startup_id');
+    return response.status(400).json({ message: 'Reference and startup_id are required' });
+  }
+
+  try {
+    const forwardedIP = '105.119.10.94';
+
+    const config = {
+      headers: {
+        'X-Forwarded-For': forwardedIP,
+      },
+    };
+
+    // Verify payment with Paystack
+    const result = await PaystackService.verifyPayment(reference, config);
+
+    console.log('Paystack verification result:', result);
+
+    const customer = result.data.customer;
+    const amountInKobo = result.data.amount;
+    const amount = amountInKobo / 100;
+    const paystackId = result.data.id;
+    const paymentReference = result.data.reference;
+    const status = result.data.status;
+
+    if (!customer || amount === undefined) {
+      console.log('Missing email or amount in Paystack response');
+      return response.status(400).json({ message: 'Missing email or amount in Paystack response' });
     }
 
-    try {
-      const forwardedIP = '105.119.10.94'
+    const email = customer.email;
 
-      const config = {
-        headers: {
-          'X-Forwarded-For': forwardedIP,
-        },
-      }
+    // Get startup info
+    const startup = await Database
+      .table('startups')
+      .where('id', startup_id)
+      .first();
 
-      // Verify payment with Paystack
-      const result = await PaystackService.verifyPayment(reference, config)
+    console.log('Startup info:', startup);
 
-      const customer = result.data.customer
-      const amountInKobo = result.data.amount
-      const amount = amountInKobo / 100
-      const paystackId = result.data.id
-      const paymentReference = result.data.reference
-      const status = result.data.status
+    if (!startup) {
+      console.log('Startup not found');
+      return response.status(404).json({ message: 'Startup not found' });
+    }
 
-      if (!customer || amount === undefined) {
-        return response.status(400).json({ message: 'Missing email or amount in Paystack response' })
-      }
+    const startupName = startup.startup_name;
 
-      const email = customer.email
+    // Check if payment with this reference already exists
+    const existingPayment = await Database
+      .table('payments')
+      .where('payment_reference', paymentReference)
+      .first();
 
-      // Get startup info
-      const startup = await Database
-        .table('startups')
-        .where('id', startup_id)
-        .first()
+    console.log('Existing payment record:', existingPayment);
 
-      if (!startup) {
-        return response.status(404).json({ message: 'Startup not found' })
-      }
-
-      const startupName = startup.startup_name
-
-      // Check if payment with this reference already exists
-      const existingPayment = await Database
+    if (existingPayment) {
+      // Update existing payment record (if needed)
+      await Database
         .table('payments')
         .where('payment_reference', paymentReference)
-        .first()
-
-      if (existingPayment) {
-        // Update existing payment record (if needed)
-        await Database
-          .table('payments')
-          .where('payment_reference', paymentReference)
-          .update({
-            status,
-            amount,          // Update amount in case it changed
-            updated_at: new Date(),
-          })
-      } else {
-        // Insert new payment record
-        await Database
-          .table('payments')
-          .insert({
-            startup_id,
-            startup_name: startupName,
-            email,
-            amount,
-            payment_id: paystackId,
-            payment_reference: paymentReference,
-            status,
-            created_at: new Date(),
-            updated_at: new Date(),
-          })
-      }
-
-      // Update amount_raised atomically
+        .update({
+          status,
+          amount,          // Update amount in case it changed
+          updated_at: new Date(),
+        });
+    } else {
+      // Insert new payment record
       await Database
-        .table('startups')
-        .where('id', startup_id)
-        .increment('amount_raised', amount)
-
-      return response.status(200).json({
-        message: 'Payment verified, saved/updated, and startup amount_raised updated successfully',
-        data: {
-          payment: result,
-          existingPayment,
-        },
-      })
-    } catch (error) {
-      return response.status(500).json({ message: error.message })
+        .table('payments')
+        .insert({
+          startup_id,
+          startup_name: startupName,
+          email,
+          amount,
+          payment_id: paystackId,
+          payment_reference: paymentReference,
+          status,
+          created_at: new Date(),
+          updated_at: new Date(),
+        });
     }
+
+    // Update amount_raised atomically
+    await Database
+      .table('startups')
+      .where('id', startup_id)
+      .increment('amount_raised', amount);
+
+    return response.status(200).json({
+      message: 'Payment verified, saved/updated, and startup amount_raised updated successfully',
+      data: {
+        payment: result,
+        existingPayment,
+      },
+    });
+  } catch (error) {
+    console.error('Verification error:', error);
+    return response.status(500).json({ message: error.message });
   }
+}
+
 
   // GET /payments (optionally, you can apply distinct here if needed)
   async all({ response }) {
