@@ -12,36 +12,31 @@ class PaystackService {
    * @param {number} amount - Amount in Naira
    * @returns {Promise<string>} - Authorization URL
    */
-  static async initialize({ request, response }) {
-  const { email, amount, startup_id } = request.only(['email', 'amount', 'startup_id']);
-  
-  if (!email || !amount || !startup_id) {
-    return response.status(400).json({ message: 'Email, amount, and startup_id are required' });
+  static async initializePayment(email, amount) {
+    try {
+      const response = await axios.post(
+        `${PAYSTACK_BASE_URL}/transaction/initialize`,
+        { email, amount: amount * 100 },
+        {
+          headers: {
+            Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      const data = response.data
+
+      if (data.status && data.data.authorization_url) {
+  return data.data // Includes authorization_url, reference, access_code
+}else {
+        throw new Error('Payment initialization failed. No authorization URL returned.')
+      }
+    } catch (error) {
+      console.error('Initialize Payment Error:', error.response?.data || error.message)
+      throw new Error(error.response?.data?.message || 'Payment initialization failed')
+    }
   }
-
-  try {
-    const forwardedIP = '105.119.10.94';
-
-    const config = {
-      headers: {
-        'X-Forwarded-For': forwardedIP,
-      },
-    };
-
-    // Define your callback URL here, e.g. your frontend or backend route
-    const callbackUrl = 'https://grantty.com/payment';
-
-    const result = await PaystackService.initializePayment(email, amount, callbackUrl, config);
-
-    return response.status(200).json({
-      message: 'Payment initialized successfully',
-      data: result,
-    });
-  } catch (error) {
-    return response.status(500).json({ message: error.message });
-  }
-}
-
 
   /**
    * Verify a Paystack transaction
