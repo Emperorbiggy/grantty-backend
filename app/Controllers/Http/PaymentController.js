@@ -21,7 +21,7 @@ class PaymentController {
       },
     }
 
-    const callbackUrl = 'http://192.168.56.1:8080/payment'
+    const callbackUrl = 'https://www.grantty.com/payment'
 
     const result = await PaystackService.initializePayment(email, amount, config, callbackUrl)
 
