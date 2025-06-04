@@ -68,3 +68,4 @@ Route.post('/payments/callback', 'PaymentController.callback')
 Route.delete('/payments/:id', 'PaymentController.delete')
 Route.delete('/users/:id', 'AuthController.deleteUser')
 
+
