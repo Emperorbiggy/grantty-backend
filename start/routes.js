@@ -66,3 +66,5 @@ Route.post('/payments/callback', 'PaymentController.callback')
 
 // Delete payment record (if needed, you may want to protect this route)
 Route.delete('/payments/:id', 'PaymentController.delete')
+Route.delete('/users/:id', 'AuthController.deleteUser').middleware(['auth'])
+

@@ -61,6 +61,44 @@ async store({ request, response, auth }) {
     })
   }
 }
+// Delete a user by ID
+async deleteUser({ params, response, auth }) {
+  try {
+    // Optionally restrict this to admin users only
+    const requestingUser = await auth.getUser()
+
+    // You can enforce admin-only access like this:
+    // if (requestingUser.user_type !== 'admin') {
+    //   return response.status(403).json({
+    //     status: 'error',
+    //     message: 'You are not authorized to perform this action'
+    //   })
+    // }
+
+    const user = await User.find(params.id)
+
+    if (!user) {
+      return response.status(404).json({
+        status: 'error',
+        message: 'User not found'
+      })
+    }
+
+    await user.delete()
+
+    return response.json({
+      status: 'success',
+      message: 'User deleted successfully'
+    })
+  } catch (error) {
+    console.error('Delete user error:', error)
+    return response.status(500).json({
+      status: 'error',
+      message: 'Failed to delete user',
+      error: error.message
+    })
+  }
+}
 
 
 async resendOtp({ request, response }) {
